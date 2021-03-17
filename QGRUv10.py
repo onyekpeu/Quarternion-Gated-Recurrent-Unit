@@ -142,9 +142,9 @@ class QuaternionLinearAutograd(Module):
                  seed=None):
 
         super(QuaternionLinearAutograd, self).__init__()
-        self.in_features = in_features#//4
+        self.in_features = in_features
         self.input_dim= in_features
-        self.out_features = out_features#//4
+        self.out_features = out_features
         self.out = out_features//3
 
         self.r_weight, self.i_weight, self.j_weight, self.k_weight = Parameter(torch.Tensor(self.in_features, self.out_features)), Parameter(torch.Tensor(self.in_features, self.out_features)), Parameter(torch.Tensor(self.in_features, self.out_features)), Parameter(torch.Tensor(self.in_features, self.out_features))
@@ -228,9 +228,6 @@ class QuaternionLinearAutograd(Module):
             output1 = torch.mm(input, wi)
             output2 = torch.mm(input, wf)
             output3 = torch.mm(input, wa)
-            
-#        output4 = torch.mm(input, wo)
-
         return output1, output2, output3#, output4
 
 
@@ -244,140 +241,77 @@ class QGRU(nn.Module):
         self.act_gate=nn.Sigmoid()
         self.input_dim=input_dim
         self.hidden_dim=hidden_dim
-#        self.CUDA=CUDA
-
-#        self.i2=input_dim*2
-#        self.i3=input_dim*3
-#        self.h2=hidden_dim*2
-#        self.h3=hidden_dim*3
         self.num_classes=output_dim
     
         # Gates initialization
         self.wf  = QuaternionLinearAutograd(self.input_dim, self.hidden_dim*3, bias=True) # Forget
-
         self.uf  = QuaternionLinearAutograd(self.hidden_dim, self.hidden_dim*3, bias=True) # Forget
         
-
         # Output layer initialization
         self.fco = nn.Linear(self.hidden_dim*4, self.num_classes, bias=True)
-#        self.tanh1 = torch.nn.Tanh()
     def forward(self, x, recurrent_dropout):
 
         self.dropout=nn.Dropout(p=float(recurrent_dropout))
-        h = Variable(torch.zeros(x.shape[0], self.hidden_dim*4))#.to(device)#, Variable(torch.zeros(x.shape[0], hidden_dim)).to(device)
-#        c = Variable(torch.zeros(x.shape[0], self.hidden_dim*4))#.to(device)
-
+        h = Variable(torch.zeros(x.shape[0], self.hidden_dim*4))
+        
         for k in range(x.shape[1]):
             x_=x[:,k,:]   
-#            x=self.dropout(x)
-#            c=self.dropout(c)
             h=self.dropout(h)
             wxf, wxi, wxn=(self.wf(x_,recurrent_dropout))
             uxf, uxi, uxn=(self.uf(h,recurrent_dropout))
-            rt, zt=self.act_gate(wxf+uxf), self.act_gate(wxi+uxi)#, self.act_gate(wxo+uxo) 
+            rt, zt=self.act_gate(wxf+uxf), self.act_gate(wxi+uxi)
             nt=self.act(wxn+(rt*uxn))
-#            nt=self.act(wxn+uxn)
-#            c=it*self.act(wxa+uxa)+ft*c
-#            h=nt+zt*(h-nt)
             h=zt*h+(1-zt)*nt
-#        h__=self.tanh1(h)    
         output = self.fco(h)
-
-     
         return output#h#, c#, h, c#torch.cat(out,0)
-
 
 
 class Net(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(Net, self).__init__()
         # Linear function 1: 784 --> 100
-        self.fc1 = QGRU(input_dim, hidden_dim, output_dim) 
-#        # Non-linearity 1
-#        self.relu1 = torch.nn.ReLU()
-#        # Linear function 2: 100 --> 100
-#        self.fc2 = torch.nn.Linear(hidden_dim*4, output_dim)
-#        # Non-linearity 2
-#        self.relu2 = torch.nn.ReLU()
-#        self.sigmoid=torch.nn.Sigmoid
-#        
-#        # Linear function 3: 100 --> 100
-#        self.fc3 = torch.nn.Linear(hidden_dim, hidden_dim)
-#        # Non-linearity 3
-#        self.tanh1 = torch.nn.Tanh()
-#        
-#        # Linear function 4 (readout): 100 --> 10
-#        self.fc4 = torch.nn.Linear(hidden_dim, output_dim)  
-    
+        self.fc1 = QGRU(input_dim, hidden_dim, output_dim)   
     def forward(self, x0, s):
-        # Linear function 1
         x1 = self.fc1(x0, s)
-
-#        # Non-linearity 1
-#        x2 = self.fc2(x1)
-#        x3=self.sigmoid(x2)
-
         return x1
 def QGRU_fit(x,y,net,input_dim, weight, num_classes, learning_rate, batch_size, epochs, dropout):
 
-
-    import time
-    #net.cuda()   
-    net=net#.to(device)   
+    import time   
+    net=net#  
     criterion = nn.L1Loss()
-#        criterion = nn.BCELoss()  
     optimizer = torch.optim.Adamax(net.parameters(), lr=learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)  #torch.optim.Adamax(params, lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
-#        decayRate = 0.96
-#        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=decayRate)
     leng=len(x)
     n_o_batches=leng/batch_size
     start=time.time()
     kw1=[]
-    lss=0.0
-#        regularization_loss = 0
-#        for param in net.parameters():
-#            regularization_loss += torch.sum(abs(param))        
+    lss=0.0      
     for epoch in range(epochs):
-        
         kw=[]
         running_loss = 0.0
         for k in range(int(np.ceil(leng/(batch_size)))):
             j=k*batch_size
             xin=x[j:j+batch_size]
             yin=y[j:j+batch_size]
-
             xin=torch.tensor(xin, dtype=torch.float32)
             xin = Variable(xin)
             xin=xin#
             yin=torch.tensor(yin, dtype=torch.float32)
             yin=Variable(yin)
-
-            optimizer = torch.optim.Adamax(net.parameters(), lr=learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)  #torch.optim.Adamax(params, lr=0.002, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
-
+            optimizer = torch.optim.Adamax(net.parameters(), lr=learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)  
             optimizer.zero_grad()  # zero the gradient buffer
-#                print(xin.shape)
             outputs = net(xin, dropout)
-#                output=torch.round(outputs)
-
             def exp_decay(epoch, decay_rate):
                 lrate=learning_rate*np.exp(-decay_rate*epoch)
                 return lrate
-#                learning_rate=exp_decay(epoch, decayRate)
             loss = criterion(outputs, yin)
-            loss = loss# + l1_ * regularization_loss
+            loss = loss
             loss.backward(retain_graph=True)
             optimizer.step()
             kw.append(loss.data)
-            running_loss =+ loss.item()# * xin.size(0)
-     #   loss_values.append(running_loss / len(train_dataset))
-            #print('epoch {}/{}, batch {}/{}, [....................], loss {}'.format(epoch, num_epochs, k, round(np.ceil(n_o_batches),0), loss.data))
-    #print('epoch {}/{}, batch {}/{}, [....................], loss {}'.format(epoch, num_epochs, k, round(np.ceil(n_o_batches),0), loss.data))
+            running_loss =+ loss.item()
         final_loss=np.mean(kw)
         kw1.append(final_loss)
         print('epoch {}/{}, batch {}/{}, [....................], loss {}'.format(epoch, epochs, k, round(np.ceil(n_o_batches),0), final_loss))
-#        lr_scheduler.step()
-    #    kw.append(running_loss / leng)
-    #plt.plot(kw)
     import matplotlib.pyplot as plt
     plt.plot(kw1)
     plt.show()
@@ -385,7 +319,6 @@ def QGRU_fit(x,y,net,input_dim, weight, num_classes, learning_rate, batch_size, 
     print('Finished Training')  
     end=time.time()
     Computation_time=end-start
-
     Run_time=Computation_time
     return net, Run_time
 
