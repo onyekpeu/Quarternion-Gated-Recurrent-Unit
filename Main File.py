@@ -11,15 +11,13 @@ import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-#from keras.optimizers.schedules import ExponentialDecay
-print('a')
-#from function_filesdispV4kitti import *
+
 from function_fileswsdispqgrupaper2 import *
 from IO_VNB_Dataset import *
 from QGRUv10 import *
-#from kittidataloader import data1
+
 print('d')
-#scipy.integrate.cumtrap
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -27,14 +25,7 @@ def count_parameters(model):
 #############################################################################
 #############################################################################
 #############################################################################
-#4- cia-3.69, hb-3.06, slr-1.31, wr-2.39
-#8 - cia-2.98, hb-3.63, slr-2.16, wr-3.26
-#16 - cia-2.92, hb-3.55, slr-1.80, wr-3.41
-#32- cia-2.89, hb-3.52, slr-1.58, wr-3.38
 
-#64 - cia-3.72, hb-2.94, slr-1.30, wr-2.09
-#128 - cia-3.75, hb-3.13, slr-1.32, wr-2.09
-#256 - cia-2.91, hb-3.76, slr-1.36, wr-3.45
 par=np.arange(1,2,1)#14
 #par=[1, 10, 100, 1000, 10000]
 #par=[160, 256, 320, 512, 720, 1024]
@@ -43,45 +34,35 @@ par=np.arange(1,2,1)#14
 #par=[4, 8, 16, 32, 48, 64, 72, 96, 128, 160, 192, 256, 512, 600, 720, 1024] #np.arange(0.01,0.11, 0.01)#14
 #par=np.arange(416,1152,32)
 opt_runsN=np.zeros((8,len(par),4))
-#opt_runsE=np.zeros((len(par),4))
-#opt_runs2=np.zeros((len(par),4))
+
 for opt_ in range(len(par)):
     opt=par[opt_]
     dropout=0.005#*int(opt)
 
     input_dim = 2
     output_dim = 1
-    num_epochs = 150#300
+    num_epochs = 150
     layer_dim = 1
-    learning_rate = 0.001#0.00002#*int(opt) #0r 0.001 #or 0.001
-    batch_size =1024#int(opt)
-    test_split =0# 0.0000001
-    decay_rate=0.1#*int(opt)#o.4,0.7
+    learning_rate = 0.001
+    batch_size =1024
+    test_split =0
+    decay_rate=0.1
     decay_steps=10000
     momentum=0.8
     samplefreq=10
     Ts=int(samplefreq*1*1)#*int(opt)
-    seq_dim=int(2*(10/Ts))#*int(opt)#12 FOR LSTM, 10 FOR GRU,12 for idnn
+    seq_dim=int(2*(10/Ts))
     seq_dim_=int(seq_dim*Ts)
-    avg=1
-    l1_=0#.01#*int(opt)#0.1#0.8
-    l2_=0#.1#*int(opt)#0#.99#0.7
-    h2 = 32#int(opt)
+
+ 
+  
+    h2 = 32#int(opt)#hidden weights
     Z=1
     outage=100
 
-    number_of_runs=1#40
+    number_of_runs=40
     mode='LSTM'
-    '''optimisation order
-    1. learning rate done, IDNNDONE, 
-    2. decay_rate 
-    3. l1 and l2
-    4. weights
-    5. dropout IDNNDONE, 
-    7. sequence length IDNNDONE, 
-    8. batch_size
-    '''
-    
+
     #############################################################################
     #############################################################################
     #############################################################################
@@ -130,8 +111,6 @@ for opt_ in range(len(par)):
     cm_runsslrdr=np.zeros((int(number_of_runs),4)) 
     cm_runswrdr=np.zeros((int(number_of_runs),4))
 
-    
-    
     newPpredhr=[]
     newPpredcia=[]
     newPpredhb=[] 
@@ -179,8 +158,7 @@ for opt_ in range(len(par)):
 
         cm_runsslr[nfr]=perf_metrslr_crsep[:]       
         cm_runswr[nfr]=perf_metrwr_crsep[:]
-     
-        
+      
         'indexes the maximum prediction crse across each 10 seconds array'
         cm_runshrdr[nfr]=perf_metrhr_crsedr[:]
         cm_runsradr[nfr]=perf_metrra_crsedr[:]     
@@ -220,36 +198,4 @@ for opt_ in range(len(par)):
 
 print(count_parameters(net))    
    
-#jj=1
-#
-#np.savetxt('dispGPS_CSHR_'+mode+'.csv', np.concatenate((np.zeros((1,gpshr.shape[1])), gpshr)), delimiter=',')
-#np.savetxt('dispINS_CSHR_'+mode+'.csv', np.concatenate((np.zeros((1,inshr.shape[1])), inshr)), delimiter=',')
-#np.savetxt('dispPred_CSHR_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredshr.shape[1])), np.array(newPpredhr[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSRA_'+mode+'.csv', np.concatenate((np.zeros((1,gpsra.shape[1])), gpsra)), delimiter=',')
-#np.savetxt('dispINS_CSRA_'+mode+'.csv', np.concatenate((np.zeros((1,insra.shape[1])), insra)), delimiter=',')
-#np.savetxt('dispPred_CSRA_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredsra.shape[1])), np.array(newPpredra[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSCIA_'+mode+'.csv', np.concatenate((np.zeros((1,gpscia.shape[1])), gpscia)), delimiter=',')
-#np.savetxt('dispINS_CSCIA_'+mode+'.csv', np.concatenate((np.zeros((1,inscia.shape[1])), inscia)), delimiter=',')
-#np.savetxt('dispPred_CSCIA_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredscia.shape[1])), np.array(newPpredcia[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSSLR_'+mode+'.csv', np.concatenate((np.zeros((1,gpsslr.shape[1])), gpsslr)), delimiter=',')
-#np.savetxt('dispINS_CSSLR_'+mode+'.csv', np.concatenate((np.zeros((1,insslr.shape[1])), insslr)), delimiter=',')
-#np.savetxt('dispPred_CSSLR_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredsslr.shape[1])), np.array(newPpredslr[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSWR_'+mode+'.csv', np.concatenate((np.zeros((1,gpswr.shape[1])), gpswr)), delimiter=',')
-#np.savetxt('dispINS_CSWR_'+mode+'.csv', np.concatenate((np.zeros((1,inswr.shape[1])), inswr)), delimiter=',')
-#np.savetxt('dispPred_CSWR_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredswr.shape[1])), np.array(newPpredwr[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSS_'+mode+'.csv', np.concatenate((np.zeros((1,gpss.shape[1])), gpss)), delimiter=',')
-#np.savetxt('dispINS_CSS_'+mode+'.csv', np.concatenate((np.zeros((1,inss.shape[1])), inss)), delimiter=',')
-#np.savetxt('dispPred_CSS_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredss.shape[1])), np.array(newPpreds[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSHB_'+mode+'.csv', np.concatenate((np.zeros((1,gpshb.shape[1])), gpshb)), delimiter=',')
-#np.savetxt('dispINS_CSHB_'+mode+'.csv', np.concatenate((np.zeros((1,inshb.shape[1])), inshb)), delimiter=',')
-#np.savetxt('dispPred_CSHB_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredshb.shape[1])), np.array(newPpredhb[jj]))), delimiter=',')
-#
-#np.savetxt('dispGPS_CSMS_'+mode+'.csv', np.concatenate((np.zeros((1,gpsms.shape[1])), gpsms)), delimiter=',')
-#np.savetxt('dispINS_CSMS_'+mode+'.csv', np.concatenate((np.zeros((1,insms.shape[1])), insms)), delimiter=',')
-#np.savetxt('dispPred_CSMS_'+mode+'.csv', np.concatenate((np.zeros((1,newPpredsms.shape[1])), np.array(newPpredms[jj]))), delimiter=',')
+
