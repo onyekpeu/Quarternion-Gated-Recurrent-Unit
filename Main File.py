@@ -12,11 +12,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
-from function_fileswsdispqgrupaper2 import *
+from function_file import *
 from IO_VNB_Dataset import *
-from QGRUv10 import *
-
-print('d')
+from QGRU import *
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -27,18 +25,11 @@ def count_parameters(model):
 #############################################################################
 
 par=np.arange(1,2,1)#14
-#par=[1, 10, 100, 1000, 10000]
-#par=[160, 256, 320, 512, 720, 1024]
-#par=[4, 8, 16, 32, 48, 64, 72, 96, 128, 160, 256, 320, 512, 720, 1024]
-#par=[1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]#,200,300,400,500,600,700,800,900]#,1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
-#par=[4, 8, 16, 32, 48, 64, 72, 96, 128, 160, 192, 256, 512, 600, 720, 1024] #np.arange(0.01,0.11, 0.01)#14
-#par=np.arange(416,1152,32)
 opt_runsN=np.zeros((8,len(par),4))
 
 for opt_ in range(len(par)):
     opt=par[opt_]
     dropout=0.005#*int(opt)
-
     input_dim = 2
     output_dim = 1
     num_epochs = 150
@@ -53,9 +44,6 @@ for opt_ in range(len(par)):
     Ts=int(samplefreq*1*1)#*int(opt)
     seq_dim=int(2*(10/Ts))
     seq_dim_=int(seq_dim*Ts)
-
- 
-  
     h2 = 32#int(opt)#hidden weights
     Z=1
     outage=100
@@ -80,11 +68,9 @@ for opt_ in range(len(par)):
     SLRdat=[V_Vw6, V_Vw8, V_Vw7]
     HRdat=[V_Vw12]
     WRdat=[V_Vtb8, V_Vtb11, V_Vtb13]
-#    ra1, ra2, dxmx, dxmn, dymx, dymn= maxmin_wheelspd(locPred42,Ts, gyro1_bias)
 
     amx, amn, dimx, dimn, dgmx, dgmn, gymx, gymn= maxmin17(V_Vw12,Ts, Acc1_bias, gyro1_bias)
     gtr,itr,x, y=data_process13t(TrainDat, seq_dim, input_dim, output_dim, Ts, Acc1_bias, Acc2_bias, gyro1_bias, batch_size, amx, amn, dimx, dimn, dgmx, dgmn, gymx, gymn, Z, mode)
-
 
     gthr,ithr,xthr, ythr=data_process13t( HRdat, seq_dim, input_dim, output_dim, Ts, Acc1_bias, Acc2_bias, gyro1_bias, batch_size, amx, amn, dimx, dimn, dgmx, dgmn, gymx, gymn, Z, mode)
     gtra,itra,xtra, ytra=data_process13t(RAdat, seq_dim, input_dim, output_dim, Ts, Acc1_bias, Acc2_bias, gyro1_bias, batch_size, amx, amn, dimx, dimn, dgmx, dgmn, gymx, gymn, Z, mode)
@@ -100,7 +86,6 @@ for opt_ in range(len(par)):
 
     cm_runsslr=np.zeros((int(number_of_runs),4)) 
     cm_runswr=np.zeros((int(number_of_runs),4))
-
 
     'array creation to store  maximum INS physical model error for each scenario after each full training. '
     cm_runshrdr=np.zeros((int(number_of_runs),4))
@@ -130,7 +115,6 @@ for opt_ in range(len(par)):
         #############################################################################
         #############################################################################
 
-        # Run_time, regress=GRU_model(np.array(x),np.array(y), input_dim,output_dim, seq_dim, batch_size, num_epochs, dropout, h2, learning_rate, l1_, l2_, nfr, decay_rate, momentum, decay_steps)
         net = QLSTM(input_dim, h2, output_dim)#, layer_dim, output_dim)
         net, Run_time=QGRU_fit(np.array(x),np.array(y),net,input_dim, h2, output_dim, learning_rate, batch_size, num_epochs, dropout)
         regress=net
@@ -149,7 +133,6 @@ for opt_ in range(len(par)):
         newPpredslr.append(newPpredsslr)  
         newPpredwr.append(newPpredswr)
  
-
         'indexes the maximum prediction crse across each 10 seconds array'
         cm_runshr[nfr]=perf_metrhr_crsep[:]
         cm_runsra[nfr]=perf_metrra_crsep[:]    
@@ -168,7 +151,6 @@ for opt_ in range(len(par)):
         cm_runsslrdr[nfr]=perf_metrslr_crsedr[:]       
         cm_runswrdr[nfr]=perf_metrwr_crsedr[:]
 
-
     'indexes the best results across the optimisation runs'       
     a10hr=np.amin(cm_runshr,axis=0)
     a10ra=np.amin(cm_runsra,axis=0)
@@ -178,8 +160,6 @@ for opt_ in range(len(par)):
     a10slr=np.amin(cm_runsslr,axis=0)
     a10swr=np.amin(cm_runswr,axis=0)
 
-
-
     a10hrp=np.amin(cm_runshrdr,axis=0)
     a10rap=np.amin(cm_runsradr,axis=0)
     a10ciap=np.amin(cm_runsciadr,axis=0)
@@ -188,7 +168,6 @@ for opt_ in range(len(par)):
     a10slrp=np.amin(cm_runsslrdr,axis=0)
     a10swrp=np.amin(cm_runswrdr,axis=0)
 
-    
     opt_runsN[0,opt_,:4]=a10hr
     opt_runsN[1,opt_,:4]=a10ra
     opt_runsN[2,opt_,:4]=a10cia
